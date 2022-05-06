@@ -6,7 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CrudUsuarios.Utils; 
+using CrudUsuarios.Utils;
+using CrudUsuarios.Services;
 
 namespace CrudUsuarios.Controllers
 {
@@ -15,39 +16,39 @@ namespace CrudUsuarios.Controllers
     [ApiController]
     public class UserController : Controller
     {
+        private readonly UserService service;
         private readonly IUserRepository repository;
+        
         public UserController(IUserRepository repository)
         {
             this.repository = repository;
+
+            service = new UserService(repository);
         }
+
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
-            var users = await repository.GetAll();
-            
+            var users = await service.returnAllUsers();
+
             if (users == null)
             {
                 return BadRequest();
             }
 
-            foreach (var user in users)
-                user.Senha = "******" ;
-
-            return Ok(users.ToList());
+            return Ok(users);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(int id)
         {
-            var user = await repository.GetById(id);
-
+            var user = await service.returnUserById(id);
+            
             if (user == null)
             {
                 return NotFound("User not found");
             }
-
-            user.Senha = "******";
 
             return Ok(user);
         }
@@ -65,9 +66,7 @@ namespace CrudUsuarios.Controllers
                 return BadRequest("Id não deve ser definido para o insert/create.");
             }
 
-            user.Senha = EncryptPassword.execute(user.Senha);
-
-            await repository.Insert(user);
+            await this.service.createUser(user);
 
             return CreatedAtAction(nameof(GetUser), new { Id = user.Id }, user);
         }
@@ -82,7 +81,7 @@ namespace CrudUsuarios.Controllers
 
             try
             {
-                await repository.UpdateUserName(user);
+                await this.service.updateUser(user);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -95,14 +94,14 @@ namespace CrudUsuarios.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<User>> DeleteUser(int id)
         {
-            User user = await repository.GetById(id);
+            User user = await this.service.returnUserById(id);
 
             if (user == null)
             {
                 return NotFound("Usuário informado não encontrado");
             }
 
-            await repository.Delete(id);
+            await service.deleteUser(id);
 
             return Ok(user);
         }

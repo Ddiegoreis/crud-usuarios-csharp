@@ -24,7 +24,7 @@ namespace CrudUsuarios.Controllers
         {
             this.configuration = configuration;
 
-            this._context = context;
+            _context = context;
         }
         
         [HttpPost]
