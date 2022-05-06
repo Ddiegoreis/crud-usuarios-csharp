@@ -9,6 +9,7 @@ namespace CrudUsuarios.Services
     public class UserService
     {
         private readonly IUserRepository repository;
+
         public UserService(IUserRepository repository)
         {
             this.repository = repository;
@@ -18,8 +19,8 @@ namespace CrudUsuarios.Services
         {
             var users = await repository.GetAll();
 
-            foreach (var user in users)
-                user.Senha = "******";
+            if (users == null)
+                return null;
 
             return users;
         }
@@ -28,7 +29,8 @@ namespace CrudUsuarios.Services
         {
             var user = await repository.GetById(id);
 
-            user.Senha = "******";
+            if (user == null)
+                return null;
 
             return user;
         }
@@ -47,7 +49,16 @@ namespace CrudUsuarios.Services
 
         public async Task deleteUser(int id)
         {
+
+
             await repository.Delete(id);
+        }
+
+        public ResetPasswordToken returnLastToken(User user)
+        {
+            var lastToken = repository.GetLastToken(user);
+
+            return lastToken;
         }
     }
 }

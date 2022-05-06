@@ -21,7 +21,7 @@ CREATE TABLE [DBO].[RESET_PASSWORD_TOKEN](
 	[IdUser] [int] NOT NULL,
 	[Cadastro] [Datetime] NOT NULL,
 	[VALIDADE] [int],
-	Foreign key ([IdUser]) References [dbo].[User](Id)
+	Foreign key ([IdUser]) References [dbo].[User](Id) ON DELETE CASCADE
 )
 
 GO

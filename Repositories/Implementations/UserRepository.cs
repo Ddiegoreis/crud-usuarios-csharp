@@ -36,10 +36,8 @@ namespace CrudUsuarios.Repositories
         public ResetPasswordToken GetLastToken(User user)
         {
             LoadPendencias(user);
-            
-            return user.ResetPasswordToken
-                .OrderByDescending(resetPassword => resetPassword.Cadastro)
-                .FirstOrDefault();
+
+            return user.ResetPasswordToken.OrderByDescending(u => u.Cadastro).FirstOrDefault();
         }
     }
 }

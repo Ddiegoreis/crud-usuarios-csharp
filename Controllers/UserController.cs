@@ -66,7 +66,7 @@ namespace CrudUsuarios.Controllers
                 return BadRequest("Id não deve ser definido para o insert/create.");
             }
 
-            await this.service.createUser(user);
+            await service.createUser(user);
 
             return CreatedAtAction(nameof(GetUser), new { Id = user.Id }, user);
         }

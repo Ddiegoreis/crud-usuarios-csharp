@@ -1,5 +1,6 @@
 ﻿using CrudUsuarios.Models;
 using CrudUsuarios.Repositories;
+using CrudUsuarios.Services;
 using CrudUsuarios.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,43 +16,43 @@ namespace CrudUsuarios.Controllers
     public class ChangePasswordController : Controller
     {
         private readonly IUserRepository repository;
+        private readonly PasswordChangeService passwordService;
+        private readonly UserService userService;
 
         public ChangePasswordController(IUserRepository repository)
         {
             this.repository = repository;
+
+            passwordService = new PasswordChangeService(repository);
+            userService = new UserService(repository);
         }
 
         [HttpPut]
         public async Task<IActionResult> PutUser(UserResetPassword user)
         {
-            User userBanco = await repository.GetById(user.Id);
+            User currentUser = await userService.returnUserById(user.Id);
 
-            if ((user == null) || (user.Id == 0) || (userBanco == null))
+            if ((user == null) || (user.Id == 0) || (currentUser == null))
             {
                 return BadRequest("Usuário inválido");
             }
 
             try
             {
-                ResetPasswordToken token = repository.GetLastToken(userBanco);
+                ResetPasswordToken token = userService.returnLastToken(currentUser);
 
                 if (!(TokenUtil.IsValid(token)) || (token.Token != EncryptPassword.execute(user.Token)))
                 {
                     return BadRequest("Token expirado ou inválido");
-                }
-                else if (userBanco.Senha != EncryptPassword.execute(user.Senha))
-                {
-                    return BadRequest("Senha original inválida");
                 }
                 else if (user.SenhaNova.Trim() == "")
                 {
                     return BadRequest("Senha inválida");
                 }
 
-                userBanco.Senha = EncryptPassword.execute(user.SenhaNova);
+                await passwordService.updateUser(user.SenhaNova, currentUser);
 
-                await repository.UpdateUserPassword(userBanco);
-
+                await repository.UpdateUserPassword(currentUser);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -64,27 +65,16 @@ namespace CrudUsuarios.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(int id)
         {
-            string token = TokenUtil.Token;
-
-            var user = await repository.GetById(id);
+            var user = await userService.returnUserById(id);
 
             if (user == null)
             {
                 return NotFound("Usuario não encontrado pelo id informado");
             }
 
-            ResetPasswordToken reset = new ResetPasswordToken()
-            {
-                Cadastro = DateTime.Now,
-                Token = EncryptPassword.execute(token),
-                Validade = TokenUtil.validadeToken
-            };
+            string resetToken = await passwordService.returnResetToken(user);
 
-            user.ResetPasswordToken.Add(reset);
-
-            await repository.Update(user);
-
-            return Ok($"Seu token para reset de senha é {token}");
+            return Ok($"Sua chave para alteração é {resetToken}");
         }
     }
 }
