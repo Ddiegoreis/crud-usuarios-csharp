@@ -35,13 +35,11 @@ namespace CrudUsuarios.Services
             return user;
         }
 
-        public async Task<User> createUser(User user)
+        public async Task createUser(User user)
         {
             user.Senha = EncryptPassword.execute(user.Senha);
 
             await repository.Insert(user);
-
-            return user;
         }
 
         public async Task updateUser(User user)
@@ -51,6 +49,8 @@ namespace CrudUsuarios.Services
 
         public async Task deleteUser(int id)
         {
+
+
             await repository.Delete(id);
         }
 
